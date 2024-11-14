@@ -1,174 +1,152 @@
 package com.mycompany.registrationform;
 
-/**
- *
- * @author Melissa
- */
 import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.sql.*;
 
 public class RegistrationForm extends JFrame {
-    // Components for the form
-    private JTextField nameField, mobileField;
-    private JRadioButton maleRadio, femaleRadio;
-    private JTextField dobField;
-    private JTextArea addressField;
-    private JCheckBox termsCheck;
-    private JLabel resultLabel;
-    private ButtonGroup genderGroup; // Moved to class-level for reset
+
+    private final JTextField txtID;
+    private final JTextField txtName;
+    private final JTextField txtAddress;
+    private final JTextField txtContact;
+    private final JRadioButton maleButton;
+    private final JRadioButton femaleButton;
+    private final JTable table;
+    private final DefaultTableModel model;
+    private final ButtonGroup genderGroup;
 
     public RegistrationForm() {
-        initComponents();
-    }
-
-    private void initComponents() {
-        // Frame properties
         setTitle("Registration Form");
         setSize(600, 400);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLocationRelativeTo(null);
+        getContentPane().setBackground(Color.BLUE);
 
-        // Initialize components
-        JLabel nameLabel = new JLabel("Name:");
-        nameField = new JTextField(20);
-        JLabel mobileLabel = new JLabel("Mobile:");
-        mobileField = new JTextField(15);
+        setLayout(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.insets = new Insets(5, 5, 5, 5);
 
-        JLabel genderLabel = new JLabel("Gender:");
-        maleRadio = new JRadioButton("Male");
-        femaleRadio = new JRadioButton("Female");
+        // Left side of the form
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        add(new JLabel("ID:"), gbc);
+        txtID = new JTextField(10);
+        gbc.gridx = 1;
+        add(txtID, gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        add(new JLabel("Name:"), gbc);
+        txtName = new JTextField(10);
+        gbc.gridx = 1;
+        add(txtName, gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy = 2;
+        add(new JLabel("Gender:"), gbc);
+        maleButton = new JRadioButton("Male");
+        femaleButton = new JRadioButton("Female");
         genderGroup = new ButtonGroup();
-        genderGroup.add(maleRadio);
-        genderGroup.add(femaleRadio);
-
-        JLabel dobLabel = new JLabel("DOB (YYYY-MM-DD):");
-        dobField = new JTextField(10);
-
-        JLabel addressLabel = new JLabel("Address:");
-        addressField = new JTextArea(3, 20);
-        addressField.setLineWrap(true);
-        addressField.setWrapStyleWord(true);
-
-        termsCheck = new JCheckBox("Accept Terms and Conditions.");
-
-        JButton submitButton = new JButton("Submit");
-        JButton resetButton = new JButton("Reset");
-
-        resultLabel = new JLabel();
-
-        // Set layout
-        JPanel panel = new JPanel(new GridLayout(8, 2, 5, 5));
-        panel.add(nameLabel);
-        panel.add(nameField);
-        panel.add(mobileLabel);
-        panel.add(mobileField);
-        panel.add(genderLabel);
-
+        genderGroup.add(maleButton);
+        genderGroup.add(femaleButton);
         JPanel genderPanel = new JPanel();
-        genderPanel.add(maleRadio);
-        genderPanel.add(femaleRadio);
-        panel.add(genderPanel);
+        genderPanel.add(maleButton);
+        genderPanel.add(femaleButton);
+        gbc.gridx = 1;
+        add(genderPanel, gbc);
 
-        panel.add(dobLabel);
-        panel.add(dobField);
-        panel.add(addressLabel);
-        panel.add(new JScrollPane(addressField));
-        panel.add(termsCheck);
+        gbc.gridx = 0;
+        gbc.gridy = 3;
+        add(new JLabel("Address:"), gbc);
+        txtAddress = new JTextField(10);
+        gbc.gridx = 1;
+        add(txtAddress, gbc);
 
-        panel.add(submitButton);
-        panel.add(resetButton);
+        gbc.gridx = 0;
+        gbc.gridy = 4;
+        add(new JLabel("Contact:"), gbc);
+        txtContact = new JTextField(10);
+        gbc.gridx = 1;
+        add(txtContact, gbc);
 
-        // Add listeners
-        submitButton.addActionListener(new ActionListener() {
+        gbc.gridx = 0;
+        gbc.gridy = 5;
+        JButton btnRegister = new JButton("Register");
+        add(btnRegister, gbc);
+
+        gbc.gridx = 1;
+        JButton btnExit = new JButton("Exit");
+        add(btnExit, gbc);
+
+        // Right side of the form (table)
+        model = new DefaultTableModel();
+        model.addColumn("ID");
+        model.addColumn("Name");
+        model.addColumn("Gender");
+        model.addColumn("Address");
+        model.addColumn("Contact");
+        table = new JTable(model);
+        JScrollPane scrollPane = new JScrollPane(table);
+        scrollPane.setPreferredSize(new Dimension(300, 200));
+
+        gbc.gridx = 2;
+        gbc.gridy = 0;
+        gbc.gridheight = 7;
+        gbc.anchor = GridBagConstraints.NORTH;
+        add(scrollPane, gbc);
+
+        btnRegister.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                submitForm();
+                registerUser();
             }
         });
 
-        resetButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                resetForm();
-            }
-        });
-
-        // Add to frame
-        setLayout(new BorderLayout());
-        add(panel, BorderLayout.CENTER);
-        add(resultLabel, BorderLayout.SOUTH);
+        btnExit.addActionListener(e -> System.exit(0));
     }
 
-    private void submitForm() {
-        // Collect data from fields
-        String name = nameField.getText();
-        String mobile = mobileField.getText();
-        String gender = maleRadio.isSelected() ? "Male" : (femaleRadio.isSelected() ? "Female" : "");
-        String dob = dobField.getText();
-        String address = addressField.getText();
+    private void registerUser() {
+        String id = txtID.getText();
+        String name = txtName.getText();
+        String gender = maleButton.isSelected() ? "Male" : (femaleButton.isSelected() ? "Female" : "");
+        String address = txtAddress.getText();
+        String contact = txtContact.getText();
 
-        if (!termsCheck.isSelected()) {
-            JOptionPane.showMessageDialog(this, "Please accept the terms and conditions.");
+        if (id.isEmpty() || name.isEmpty() || gender.isEmpty() || address.isEmpty() || contact.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Please fill in all fields.");
             return;
         }
 
-        // Validate input (simple validation)
-        if (name.isEmpty() || mobile.isEmpty() || gender.isEmpty() || dob.isEmpty() || address.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "All fields are required.");
-            return;
-        }
+        try (Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/registration_db", "root", "Admin24")) {
+            String query = "INSERT INTO users (ID, Name, Gender, Address, Contact) VALUES (?, ?, ?, ?, ?)";
+            PreparedStatement stmt = conn.prepareStatement(query);
+            stmt.setString(1, id);
+            stmt.setString(2, name);
+            stmt.setString(3, gender);
+            stmt.setString(4, address);
+            stmt.setString(5, contact);
+            stmt.executeUpdate();
 
-        // Connect to the database and insert data
-        try {
-            // Load MySQL driver if necessary
-            Class.forName("com.mysql.cj.jdbc.Driver");
+            model.addRow(new Object[]{id, name, gender, address, contact});
 
-            try (Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/registration_db", "root", "Admin24");
-                 PreparedStatement stmt = conn.prepareStatement("INSERT INTO users (name, mobile, gender, dob, address) VALUES (?, ?, ?, ?, ?)")) {
+            txtID.setText("");
+            txtName.setText("");
+            txtAddress.setText("");
+            txtContact.setText("");
+            genderGroup.clearSelection();
 
-                stmt.setString(1, name);
-                stmt.setString(2, mobile);
-                stmt.setString(3, gender);
-                stmt.setDate(4, Date.valueOf(dob)); // Ensure dob is in YYYY-MM-DD format
-                stmt.setString(5, address);
-                stmt.executeUpdate();
-
-                resultLabel.setText("Registration Successful!");
-                displayData(name, mobile, gender, dob, address);
-
-            }
+            JOptionPane.showMessageDialog(this, "User registered successfully!");
         } catch (SQLException ex) {
             ex.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Error saving data: " + ex.getMessage());
-        } catch (ClassNotFoundException ex) {
-            ex.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Database Driver not found.");
+            JOptionPane.showMessageDialog(this, "Database error: " + ex.getMessage());
         }
-    }
-
-    private void displayData(String name, String mobile, String gender, String dob, String address) {
-        // Display user data on the right side of the form
-        resultLabel.setText("<html>Name: " + name + "<br>Mobile: " + mobile + "<br>Gender: " + gender + "<br>DOB: " + dob + "<br>Address: " + address + "</html>");
-    }
-
-    private void resetForm() {
-        // Reset all fields
-        nameField.setText("");
-        mobileField.setText("");
-        genderGroup.clearSelection();
-        dobField.setText("");
-        addressField.setText("");
-        termsCheck.setSelected(false);
-        resultLabel.setText("");
     }
 
     public static void main(String[] args) {
-        // Run the application
-        SwingUtilities.invokeLater(() -> {
-            new RegistrationForm().setVisible(true);
-        });
+        SwingUtilities.invokeLater(() -> new RegistrationForm().setVisible(true));
     }
 }
